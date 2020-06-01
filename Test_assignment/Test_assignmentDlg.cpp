@@ -25,6 +25,7 @@ CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent /*=nullptr*/)
 	, m_actSubCategory("")
 	, m_actComment("")
 	, m_startDate("")
+	, m_sDsn(L"ODBC;DRIVER={MICROSOFT ACCESS DRIVER (*.mdb)};DSN='';DBQ=Test.mdb")
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -95,7 +96,7 @@ HCURSOR CTestassignmentDlg::OnQueryDragIcon()
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::OnBnClickedButtonStartStop()
 {
-	
+	insertActivityToDB();
 	if (!m_bIsRunning)
 	{
 		CNewActivity newActivityDialog;
@@ -142,6 +143,27 @@ void CTestassignmentDlg::insertActivityToTreeView()
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::insertActivityToDB()
 {
+	CString SqlString;
+	TRY
+	{
+		// Open the database
+		m_DB.Open(NULL, false, false, m_sDsn);
+
+		SqlString = 
+			"INSERT INTO Activities ( Catgory, Subcategory, Start_date, End_date, Comment )\
+				VALUES\
+			( 'Lol', 'jo', '2020-05-30 17:00:00', '2020-05-30 17:17:00', 'kiraly' )";
+
+		m_DB.ExecuteSQL(SqlString);
+		// Close the database
+		m_DB.Close();
+	}
+	CATCH(CDBException, e)
+	{
+		// If a database exception occured, show error msg
+		AfxMessageBox(L"Database error: " + e->m_strError);
+	}
+	END_CATCH;
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 CString CTestassignmentDlg::convertSecToStr(int sec)

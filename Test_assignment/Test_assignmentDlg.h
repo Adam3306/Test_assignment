@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include "odbcinst.h"
+#include "afxdb.h"
+
 #include "CNewActivity.h"
 
 // CTestassignmentDlg dialog
@@ -44,6 +47,9 @@ protected:
 	int		m_elapsed_time;
 
 	bool m_bIsRunning;
+
+	CDatabase	m_DB;
+	CString		m_sDsn;
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();

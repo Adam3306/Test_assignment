@@ -2,9 +2,9 @@
 // Microsoft Visual C++ generated include file.
 // Used by Testassignment.rc
 //
+#define IDD_NEW_ACTIVITY_DIALOG         9
 #define IDD_TEST_ASSIGNMENT_DIALOG      102
 #define IDR_MAINFRAME                   128
-#define IDD_DIALOG1                     130
 #define IDC_BUTTON_START_STOP           1000
 #define IDC_BUTTON_CANCEL               1001
 #define IDC_TREE1                       1003

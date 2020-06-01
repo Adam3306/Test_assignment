@@ -8,6 +8,8 @@
 #include "Test_assignmentDlg.h"
 #include "afxdialogex.h"
 
+#include "CNewActivity.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -91,5 +93,14 @@ HCURSOR CTestassignmentDlg::OnQueryDragIcon()
 
 void CTestassignmentDlg::OnBnClickedButtonStartStop()
 {
-	// TODO: Add your control notification handler code here
+	CNewActivity newActivityDialog;
+
+	if (newActivityDialog.DoModal() == IDH_OK)
+	{
+
+	}
+	else
+	{
+
+	}
 }

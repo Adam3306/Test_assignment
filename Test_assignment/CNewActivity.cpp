@@ -10,17 +10,17 @@
 // CNewActivity dialog
 
 IMPLEMENT_DYNAMIC(CNewActivity, CDialogEx)
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 CNewActivity::CNewActivity(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_NEW_ACTIVITY_DIALOG, pParent)
 {
 
 }
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 CNewActivity::~CNewActivity()
 {
 }
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CNewActivity::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
@@ -28,17 +28,14 @@ void CNewActivity::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_COMBO2, m_subCatComboBox);
 	DDX_Control(pDX, IDC_EDIT1, m_commentEditor);
 }
-
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 BEGIN_MESSAGE_MAP(CNewActivity, CDialogEx)
 	ON_BN_CLICKED(IDOK, &CNewActivity::OnBnClickedOk)
 	ON_CBN_SELCHANGE(IDC_COMBO1, &CNewActivity::OnCbnSelchangeCombo)
 END_MESSAGE_MAP()
 
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 // CNewActivity message handlers
-
-
 void CNewActivity::OnBnClickedOk()
 {
 	m_mainCatComboBox.GetLBText(m_mainCatComboBox.GetCurSel(), m_actMainCategory);
@@ -51,8 +48,7 @@ void CNewActivity::OnBnClickedOk()
 	}
 	CDialogEx::OnOK();
 }
-
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 BOOL CNewActivity::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -66,9 +62,9 @@ BOOL CNewActivity::OnInitDialog()
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
 }
-
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CNewActivity::OnCbnSelchangeCombo()
 {
 	
 }
+// ------------------------------------------------------------------------------------------------------------------------------------------------------

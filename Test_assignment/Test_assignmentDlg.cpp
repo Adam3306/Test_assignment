@@ -15,11 +15,8 @@
 #define new DEBUG_NEW
 #endif
 
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 // CTestassignmentDlg dialog
-
-
-
 CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_TEST_ASSIGNMENT_DIALOG, pParent)
 	, m_bIsRunning(false)
@@ -31,13 +28,13 @@ CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent /*=nullptr*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_TREE1, m_activityTreeCtrl);
 }
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 BEGIN_MESSAGE_MAP(CTestassignmentDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
@@ -45,9 +42,8 @@ BEGIN_MESSAGE_MAP(CTestassignmentDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_CANCEL, &CTestassignmentDlg::OnBnClickedButtonCancel)
 END_MESSAGE_MAP()
 
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 // CTestassignmentDlg message handlers
-
 BOOL CTestassignmentDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -61,11 +57,10 @@ BOOL CTestassignmentDlg::OnInitDialog()
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 // If you add a minimize button to your dialog, you will need the code below
 //  to draw the icon.  For MFC applications using the document/view model,
 //  this is automatically done for you by the framework.
-
 void CTestassignmentDlg::OnPaint()
 {
 	if (IsIconic())
@@ -90,16 +85,14 @@ void CTestassignmentDlg::OnPaint()
 		CDialogEx::OnPaint();
 	}
 }
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 // The system calls this function to obtain the cursor to display while the user drags
 //  the minimized window.
 HCURSOR CTestassignmentDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
-
-
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::OnBnClickedButtonStartStop()
 {
 	
@@ -119,7 +112,7 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 		insertActivityToTreeView();
 	}
 }
-
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::insertActivityToTreeView()
 {
 	HTREEITEM hItem, hCar;
@@ -143,10 +136,84 @@ void CTestassignmentDlg::insertActivityToTreeView()
 		// update
 	}
 
-	m_actComment += m_startDate + CString("") + m_endDate;
+	m_actComment += CString(" - elapsed time: ") + convertSecToStr(m_elapsed_time);
 	m_activityTreeCtrl.InsertItem(m_actComment, hCar);
 }
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+void CTestassignmentDlg::insertActivityToDB()
+{
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+CString CTestassignmentDlg::convertSecToStr(int sec)
+{
+	int hour = sec / 3600;
+	sec %= 3600;
+	int min = sec / 60;
+	sec %= 60;
 
+	char buf[64];
+	if (hour > 0)
+	{
+		sprintf_s(buf, "%d hour %d min %d seconds", hour, min, sec);
+	}
+	else
+	if (min > 0)
+	{
+		sprintf_s(buf, "%d min %d seconds", min, sec);
+	}
+	else
+	{
+		sprintf_s(buf, "%d seconds", min, sec);
+	}
+
+	return CString(buf);
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+void CTestassignmentDlg::startNewActivity(CNewActivity& newActivityDialog)
+{
+	m_bIsRunning = true;
+	m_actMainCategory = newActivityDialog.m_actMainCategory;
+	m_actSubCategory = newActivityDialog.m_actSubCategory;
+	m_actComment = newActivityDialog.m_actComment;
+	m_startTime = time(0);
+	getCurrentDateAsStr(m_startDate);
+
+	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Stop");
+	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_SHOW);
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+void CTestassignmentDlg::endActivity()
+{
+	m_bIsRunning = false;
+	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Start");
+	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_HIDE);
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+void CTestassignmentDlg::getCurrentDateAsStr(CString& targetStr)
+{
+	time_t rawtime;
+	struct tm * timeinfo = new tm();
+	char buffer[80];
+
+	time(&rawtime);
+	localtime_s(timeinfo, &rawtime);
+
+	strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+	targetStr = buffer;
+
+	delete timeinfo;
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+void CTestassignmentDlg::OnBnClickedButtonCancel()
+{
+	endActivity();
+	m_actMainCategory.Delete(0, m_actMainCategory.GetLength());
+	m_actSubCategory.Delete(0, m_actSubCategory.GetLength());
+	m_actComment.Delete(0, m_actComment.GetLength());
+	m_startDate.Delete(0, m_startDate.GetLength());
+	m_startTime = 0;
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
 HTREEITEM CTestassignmentDlg::FindItem(const CString & name, HTREEITEM hRoot)
 {
 	// check whether the current item is the searched one
@@ -171,51 +238,4 @@ HTREEITEM CTestassignmentDlg::FindItem(const CString & name, HTREEITEM hRoot)
 	// return NULL if nothing was found
 	return NULL;
 }
-
-
-void CTestassignmentDlg::startNewActivity(CNewActivity& newActivityDialog)
-{
-	m_bIsRunning = true;
-	m_actMainCategory = newActivityDialog.m_actMainCategory;
-	m_actSubCategory = newActivityDialog.m_actSubCategory;
-	m_actComment = newActivityDialog.m_actComment;
-	m_startTime = time(0);
-	getCurrentDateAsStr(m_startDate);
-
-	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Stop");
-	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_SHOW);
-}
-
-void CTestassignmentDlg::endActivity()
-{
-	m_bIsRunning = false;
-	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Start");
-	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_HIDE);
-}
-
-void CTestassignmentDlg::getCurrentDateAsStr(CString& targetStr)
-{
-	time_t rawtime;
-	struct tm * timeinfo = new tm();
-	char buffer[80];
-
-	time(&rawtime);
-	localtime_s(timeinfo, &rawtime);
-
-	strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
-	targetStr = buffer;
-
-	delete timeinfo;
-}
-
-
-
-void CTestassignmentDlg::OnBnClickedButtonCancel()
-{
-	endActivity();
-	m_actMainCategory.Delete(0, m_actMainCategory.GetLength());
-	m_actSubCategory.Delete(0, m_actSubCategory.GetLength());
-	m_actComment.Delete(0, m_actComment.GetLength());
-	m_startDate.Delete(0, m_startDate.GetLength());
-	m_startTime = 0;
-}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -30,6 +30,9 @@ protected:
 	void endActivity();
 	void getCurrentDateAsStr(CString& targetStr);
 	void insertActivityToTreeView();
+	void insertActivityToDB();
+	CString convertSecToStr(int sec);
+
 	HTREEITEM FindItem(const CString& name, HTREEITEM hRoot);
 	// Values
 	CString m_actMainCategory;

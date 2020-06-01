@@ -35,6 +35,7 @@ protected:
 	void insertActivityToTreeView();
 	void insertActivityToDB();
 	CString convertSecToStr(int sec);
+	int getSumWorkingSeconds();
 
 	HTREEITEM FindItem(const CString& name, HTREEITEM hRoot);
 	// Values

@@ -9,11 +9,17 @@
 #include "afxdialogex.h"
 
 #include <time.h>
+#include <stdlib.h>
 #include <ctime>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+/*
+
+"CREATE TABLE Activities (\
+			Category VARCHAR(50), Subcategory VARCHAR(50), Start_date DATETIME, End_date DATETIME, Comment VARCHAR(50), Elapsed_Time INTEGER )"
+*/
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 // CTestassignmentDlg dialog
@@ -25,7 +31,7 @@ CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent /*=nullptr*/)
 	, m_actSubCategory("")
 	, m_actComment("")
 	, m_startDate("")
-	, m_sDsn(L"ODBC;DRIVER={MICROSOFT ACCESS DRIVER (*.mdb)};DSN='';DBQ=Test.mdb")
+	, m_sDsn(L"ODBC;DRIVER={MICROSOFT ACCESS DRIVER (*.mdb)};DSN='';DBQ=Database.mdb")
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -96,7 +102,7 @@ HCURSOR CTestassignmentDlg::OnQueryDragIcon()
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::OnBnClickedButtonStartStop()
 {
-	insertActivityToDB();
+	getSumWorkingSeconds();
 	if (!m_bIsRunning)
 	{
 		CNewActivity newActivityDialog;
@@ -110,6 +116,7 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 		endActivity();
 		m_elapsed_time = difftime(time(0), m_startTime);
 		getCurrentDateAsStr(m_endDate);
+		insertActivityToDB();
 		insertActivityToTreeView();
 	}
 }
@@ -135,10 +142,10 @@ void CTestassignmentDlg::insertActivityToTreeView()
 	else
 	{
 		// update
+		int seconds = getSumWorkingSeconds();
 	}
 
-	m_actComment += CString(" - elapsed time: ") + convertSecToStr(m_elapsed_time);
-	m_activityTreeCtrl.InsertItem(m_actComment, hCar);
+	m_activityTreeCtrl.InsertItem(m_actComment + CString(" - elapsed time: ") + convertSecToStr(m_elapsed_time), hCar);
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::insertActivityToDB()
@@ -148,12 +155,20 @@ void CTestassignmentDlg::insertActivityToDB()
 	{
 		// Open the database
 		m_DB.Open(NULL, false, false, m_sDsn);
-
-		SqlString = 
-			"INSERT INTO Activities ( Catgory, Subcategory, Start_date, End_date, Comment )\
-				VALUES\
-			( 'Lol', 'jo', '2020-05-30 17:00:00', '2020-05-30 17:17:00', 'kiraly' )";
-
+		CString elapsedSecs;
+		elapsedSecs.Format(L"%d", m_elapsed_time);
+		// Create Query
+		SqlString =
+			CString("INSERT INTO Activities ( Category, Subcategory, Start_date, End_date, Comment, Elapsed_Time  )\
+					VALUES (")
+			+ CString("'") + m_actMainCategory + CString("',")
+			+ CString("'") + m_actSubCategory + CString("',")
+			+ CString("'") + m_startDate + CString("',")
+			+ CString("'") + m_endDate + CString("',")
+			+ CString("'") + m_actComment + CString("',")
+			+ CString("'") + elapsedSecs + CString("')");
+			
+		// Execute query
 		m_DB.ExecuteSQL(SqlString);
 		// Close the database
 		m_DB.Close();
@@ -185,10 +200,46 @@ CString CTestassignmentDlg::convertSecToStr(int sec)
 	}
 	else
 	{
-		sprintf_s(buf, "%d seconds", min, sec);
+		sprintf_s(buf, "%d seconds", sec);
 	}
 
 	return CString(buf);
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+int CTestassignmentDlg::getSumWorkingSeconds()
+{
+	CString SqlString;
+	TRY
+	{
+		// Open the database
+		m_DB.Open(NULL, false, false, m_sDsn);
+		
+		// Create Query
+		SqlString = CString(
+					"SELECT SUM(Elapsed_Time) FROM ACTIVITIES \
+						WHERE\
+					Category='") + m_actMainCategory + CString("' AND Subcategory='") + m_actSubCategory + CString("';");
+		// Allocate the recordset
+		CRecordset recset(&m_DB);
+		// Execute query
+		recset.Open(CRecordset::forwardOnly, SqlString, CRecordset::readOnly);
+
+		CString val = _T("0");
+		if (!recset.IsEOF())
+		{
+			recset.GetFieldValue((short)0, val);
+		}
+		// Close the database
+		m_DB.Close();
+		return _ttoi(val);
+	}
+	CATCH(CDBException, e)
+	{
+		// If a database exception occured, show error msg
+		AfxMessageBox(L"Database error: " + e->m_strError);
+	}
+	END_CATCH;
+	return 0;
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::startNewActivity(CNewActivity& newActivityDialog)

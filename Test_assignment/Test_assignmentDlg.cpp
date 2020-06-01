@@ -115,7 +115,7 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 	else
 	{
 		endActivity();
-		m_activity.m_elapsed_time = difftime(time(0), m_activity.m_startTime);
+		m_activity.m_elapsed_time = static_cast<int>(difftime(time(0), m_activity.m_startTime));
 		getCurrentDateAsStr(m_activity.m_endDate);
 		insertActivityToDB();
 		insertActivityToTreeView();

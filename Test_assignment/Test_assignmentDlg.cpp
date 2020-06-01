@@ -99,7 +99,6 @@ HCURSOR CTestassignmentDlg::OnQueryDragIcon()
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::OnBnClickedButtonStartStop()
 {
-	getSumWorkingSeconds();
 	if (!m_bIsRunning)
 	{
 		CNewActivity newActivityDialog;
@@ -114,6 +113,10 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 		m_activity.m_elapsed_time = difftime(time(0), m_activity.m_startTime);
 		getCurrentDateAsStr(m_activity.m_endDate);
 		insertActivityToDB();
+
+		//m_activityTreeCtrl.DeleteAllItems();
+		//loadActivities();
+
 		insertActivityToTreeView();
 	}
 }
@@ -121,25 +124,51 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 void CTestassignmentDlg::insertActivityToTreeView()
 {
 	HTREEITEM hItem, hCar;
-	hItem = FindItem(m_activity.m_actMainCategory, NULL);
+	CString tmp = m_activity.m_actMainCategory;
+	//------------------
+	// TODO: SHOULD BE REFACTORED - ITS VERY DANGEROUS
+	int nTokenPos = 0;
+	CString strToken = tmp.Tokenize(_T("-"), nTokenPos);
+
+	if (!strToken.IsEmpty())
+	{
+		tmp = strToken.Trim();
+	}
+	//------------------
+
+	hItem = FindItem(tmp, NULL);
+	int seconds = getSumWorkingSecondsByCategory();
 	if (hItem == NULL)
 	{
-		hItem = m_activityTreeCtrl.InsertItem(m_activity.m_actMainCategory, TVI_ROOT);
+		hItem = m_activityTreeCtrl.InsertItem(m_activity.m_actMainCategory + CString(" - total elapsed time: ") + convertSecToStr(seconds), TVI_ROOT);
 	}
 	else
 	{
-		// update
+		// update text
+		m_activityTreeCtrl.SetItemText(hItem, m_activity.m_actMainCategory + CString(" - total elapsed time: ") + convertSecToStr(seconds));
+		
 	}
+	//------------------
+	// TODO: SHOULD BE REFACTORED - ITS VERY DANGEROUS
+	tmp = m_activity.m_actSubCategory;
+	nTokenPos = 0;
+	strToken = tmp.Tokenize(_T("-"), nTokenPos);
 
-	hCar = FindItem(m_activity.m_actSubCategory, hItem);
+	if (!strToken.IsEmpty())
+	{
+		tmp = strToken.Trim();
+	}
+	//------------------
+	hCar = FindItem(tmp, hItem);
+	seconds = getSumWorkingSecondsBySubcategory();
 	if (hCar == NULL)
 	{
-		hCar = m_activityTreeCtrl.InsertItem(m_activity.m_actSubCategory, hItem);
+		hCar = m_activityTreeCtrl.InsertItem(m_activity.m_actSubCategory + CString(" - total elapsed time: ") + convertSecToStr(seconds), hItem);
 	}
 	else
 	{
 		// update
-		int seconds = getSumWorkingSeconds();
+		m_activityTreeCtrl.SetItemText(hCar, m_activity.m_actSubCategory + CString(" - total elapsed time: ") + convertSecToStr(seconds));
 	}
 
 	m_activityTreeCtrl.InsertItem(m_activity.m_actComment + CString(" - elapsed time: ") + convertSecToStr(m_activity.m_elapsed_time), hCar);
@@ -262,7 +291,46 @@ CString CTestassignmentDlg::convertSecToStr(int sec)
 	return CString(buf);
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
-int CTestassignmentDlg::getSumWorkingSeconds()
+int CTestassignmentDlg::getSumWorkingSecondsByCategory()
+{
+	CString SqlString;
+	TRY
+	{
+		if (!m_DB.IsOpen())
+		{
+			m_DB.Open(NULL, false, false, m_sDsn);
+		}
+
+	// Create Query
+	SqlString = CString(
+				"SELECT SUM(Elapsed_Time) FROM ACTIVITIES \
+						WHERE\
+					Category='") + m_activity.m_actMainCategory + CString("';");
+
+	// Allocate the recordset
+	CRecordset recset(&m_DB);
+	// Execute query
+	recset.Open(CRecordset::forwardOnly, SqlString, CRecordset::readOnly);
+
+	CString val = _T("0");
+	if (!recset.IsEOF())
+	{
+		recset.GetFieldValue((short)0, val);
+	}
+	// Close the database
+	m_DB.Close();
+	return _ttoi(val);
+	}
+		CATCH(CDBException, e)
+	{
+		// If a database exception occured, show error msg
+		AfxMessageBox(L"Database error: " + e->m_strError);
+	}
+	END_CATCH;
+	return 0;
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+int CTestassignmentDlg::getSumWorkingSecondsBySubcategory()
 {
 	CString SqlString;
 	TRY
@@ -309,7 +377,7 @@ void CTestassignmentDlg::startNewActivity(CNewActivity& newActivityDialog)
 	m_activity.m_actComment = newActivityDialog.m_actComment;
 	m_activity.m_startTime = time(0);
 	getCurrentDateAsStr(m_activity.m_startDate);
-
+	GetDlgItem(IDC_ACTUAL_ACTIVITY)->SetWindowText(L"Current activity: " + m_activity.m_actMainCategory + " - " + m_activity.m_actSubCategory);
 	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Stop");
 	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_SHOW);
 }
@@ -317,6 +385,7 @@ void CTestassignmentDlg::startNewActivity(CNewActivity& newActivityDialog)
 void CTestassignmentDlg::endActivity()
 {
 	m_bIsRunning = false;
+	GetDlgItem(IDC_ACTUAL_ACTIVITY)->SetWindowText(L"");
 	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Start");
 	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_HIDE);
 }
@@ -350,6 +419,16 @@ HTREEITEM CTestassignmentDlg::FindItem(const CString & name, HTREEITEM hRoot)
 {
 	// check whether the current item is the searched one
 	CString text = m_activityTreeCtrl.GetItemText(hRoot);
+	//------------------
+	// TODO: SHOULD BE REFACTORED - ITS VERY DANGEROUS
+	int nTokenPos = 0;
+	CString strToken = text.Tokenize(_T("-"), nTokenPos);
+
+	if (!strToken.IsEmpty())
+	{
+		text = strToken.Trim();
+	}
+	//------------------
 	if (text.Compare(name) == 0)
 		return hRoot;
 

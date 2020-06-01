@@ -47,7 +47,9 @@ protected:
 	void insertActivityToDB();
 	void loadActivities();
 	CString convertSecToStr(int sec);
-	int getSumWorkingSeconds();
+
+	int getSumWorkingSecondsByCategory();
+	int getSumWorkingSecondsBySubcategory();
 
 	HTREEITEM FindItem(const CString& name, HTREEITEM hRoot);
 

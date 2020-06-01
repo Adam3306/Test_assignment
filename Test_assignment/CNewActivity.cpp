@@ -55,16 +55,38 @@ BOOL CNewActivity::OnInitDialog()
 
 	m_mainCatComboBox.AddString(L"Work");
 	m_mainCatComboBox.AddString(L"Learn");
+	m_mainCatComboBox.AddString(L"Sport");
 
-	// TODO: add subcategories depending on main category!
-	m_subCatComboBox.AddString(L"Synthesis homework");
-
+	m_subCatComboBox.ResetContent();
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CNewActivity::OnCbnSelchangeCombo()
 {
+	m_mainCatComboBox.GetLBText(m_mainCatComboBox.GetCurSel(), m_actMainCategory);
+	
+	m_subCatComboBox.ResetContent();
+
+	if (m_actMainCategory.Compare(L"Work") == 0)
+	{
+		m_subCatComboBox.AddString(L"Work at Sythesis.net company");
+		m_subCatComboBox.AddString(L"House work");
+	}
+	else if (m_actMainCategory.Compare(L"Learn") == 0)
+	{
+		m_subCatComboBox.AddString(L"Programming");
+		m_subCatComboBox.AddString(L"Math");
+		m_subCatComboBox.AddString(L"Physics");
+		m_subCatComboBox.AddString(L"History");
+	}
+	else if (m_actMainCategory.Compare(L"Sport") == 0)
+	{
+		m_subCatComboBox.AddString(L"Running");
+		m_subCatComboBox.AddString(L"Swimming");
+		m_subCatComboBox.AddString(L"Road cycling");
+		m_subCatComboBox.AddString(L"Muay Thai boxing");
+	}
 	
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------

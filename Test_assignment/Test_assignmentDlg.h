@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "CNewActivity.h"
 
 // CTestassignmentDlg dialog
 class CTestassignmentDlg : public CDialogEx
@@ -25,6 +26,21 @@ public:
 protected:
 	HICON m_hIcon;
 
+	void startNewActivity(CNewActivity& newActivityDialog);
+	void endActivity();
+	void getCurrentDateAsStr(CString& targetStr);
+	void insertActivityToTreeView();
+	HTREEITEM FindItem(const CString& name, HTREEITEM hRoot);
+	// Values
+	CString m_actMainCategory;
+	CString m_actSubCategory;
+	CString m_actComment;
+	CString m_startDate;
+	CString m_endDate;
+	time_t	m_startTime;
+	int		m_elapsed_time;
+
+	bool m_bIsRunning;
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
@@ -32,4 +48,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedButtonStartStop();
+	afx_msg void OnBnClickedButtonCancel();
+	CTreeCtrl m_activityTreeCtrl;
 };

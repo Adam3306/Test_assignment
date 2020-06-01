@@ -31,6 +31,7 @@ public:
 	CString m_actMainCategory;
 	CString m_actSubCategory;
 	CString m_actComment;
+
 	afx_msg void OnBnClickedOk();
 	virtual BOOL OnInitDialog();
 	afx_msg void OnCbnSelchangeCombo();

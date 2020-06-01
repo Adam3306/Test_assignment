@@ -8,7 +8,8 @@
 #include "Test_assignmentDlg.h"
 #include "afxdialogex.h"
 
-#include "CNewActivity.h"
+#include <time.h>
+#include <ctime>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -21,6 +22,12 @@
 
 CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_TEST_ASSIGNMENT_DIALOG, pParent)
+	, m_bIsRunning(false)
+	, m_elapsed_time(0)
+	, m_actMainCategory("")
+	, m_actSubCategory("")
+	, m_actComment("")
+	, m_startDate("")
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -28,12 +35,14 @@ CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent /*=nullptr*/)
 void CTestassignmentDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_TREE1, m_activityTreeCtrl);
 }
 
 BEGIN_MESSAGE_MAP(CTestassignmentDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_START_STOP, &CTestassignmentDlg::OnBnClickedButtonStartStop)
+	ON_BN_CLICKED(IDC_BUTTON_CANCEL, &CTestassignmentDlg::OnBnClickedButtonCancel)
 END_MESSAGE_MAP()
 
 
@@ -93,14 +102,101 @@ HCURSOR CTestassignmentDlg::OnQueryDragIcon()
 
 void CTestassignmentDlg::OnBnClickedButtonStartStop()
 {
-	CNewActivity newActivityDialog;
-
-	if (newActivityDialog.DoModal() == IDH_OK)
+	
+	if (!m_bIsRunning)
 	{
-
+		CNewActivity newActivityDialog;
+		if (newActivityDialog.DoModal() == IDOK)
+		{
+			startNewActivity(newActivityDialog);
+		}
 	}
 	else
 	{
-
+		endActivity();
+		m_elapsed_time = difftime(time(0), m_startTime);
+		getCurrentDateAsStr(m_endDate);
+		insertActivityToTreeView();
 	}
+}
+
+void CTestassignmentDlg::insertActivityToTreeView()
+{
+	HTREEITEM hItem, hCar;
+	hItem = m_activityTreeCtrl.InsertItem(L"Car Listing", TVI_ROOT);
+	hCar = m_activityTreeCtrl.InsertItem(L"Economy", hItem);
+	m_activityTreeCtrl.InsertItem(L"BH-733", hCar);
+}
+
+HTREEITEM CTestassignmentDlg::FindItem(const CString & name, HTREEITEM hRoot)
+{
+	// check whether the current item is the searched one
+	CString text = m_activityTreeCtrl.GetItemText(hRoot);
+	if (text.Compare(name) == 0)
+		return hRoot;
+
+	// get a handle to the first child item
+	HTREEITEM hSub = m_activityTreeCtrl.GetChildItem(hRoot);
+	// iterate as long a new item is found
+	while (hSub)
+	{
+		// check the children of the current item
+		HTREEITEM hFound = FindItem(name, hSub);
+		if (hFound)
+			return hFound;
+
+		// get the next sibling of the current item
+		hSub = m_activityTreeCtrl.GetNextSiblingItem(hSub);
+	}
+
+	// return NULL if nothing was found
+	return NULL;
+}
+
+
+void CTestassignmentDlg::startNewActivity(CNewActivity& newActivityDialog)
+{
+	m_bIsRunning = true;
+	m_actMainCategory = newActivityDialog.m_actMainCategory;
+	m_actSubCategory = newActivityDialog.m_actSubCategory;
+	m_actComment = newActivityDialog.m_actComment;
+	m_startTime = time(0);
+	getCurrentDateAsStr(m_startDate);
+
+	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Stop");
+	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_SHOW);
+}
+
+void CTestassignmentDlg::endActivity()
+{
+	m_bIsRunning = false;
+	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Start");
+	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_HIDE);
+}
+
+void CTestassignmentDlg::getCurrentDateAsStr(CString& targetStr)
+{
+	time_t rawtime;
+	struct tm * timeinfo = new tm();
+	char buffer[80];
+
+	time(&rawtime);
+	localtime_s(timeinfo, &rawtime);
+
+	strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+	targetStr = buffer;
+
+	delete timeinfo;
+}
+
+
+
+void CTestassignmentDlg::OnBnClickedButtonCancel()
+{
+	endActivity();
+	m_actMainCategory.Delete(0, m_actMainCategory.GetLength());
+	m_actSubCategory.Delete(0, m_actSubCategory.GetLength());
+	m_actComment.Delete(0, m_actComment.GetLength());
+	m_startDate.Delete(0, m_startDate.GetLength());
+	m_startTime = 0;
 }

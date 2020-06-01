@@ -11,6 +11,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <ctime>
+#include <vector>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -26,13 +27,9 @@
 CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_TEST_ASSIGNMENT_DIALOG, pParent)
 	, m_bIsRunning(false)
-	, m_elapsed_time(0)
-	, m_actMainCategory("")
-	, m_actSubCategory("")
-	, m_actComment("")
-	, m_startDate("")
 	, m_sDsn(L"ODBC;DRIVER={MICROSOFT ACCESS DRIVER (*.mdb)};DSN='';DBQ=Database.mdb")
 {
+	m_activity = { L"", L"", L"", L"", 0, 0 };
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -60,7 +57,7 @@ BOOL CTestassignmentDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
-	// TODO: Add extra initialization here
+	loadActivities();
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -114,8 +111,8 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 	else
 	{
 		endActivity();
-		m_elapsed_time = difftime(time(0), m_startTime);
-		getCurrentDateAsStr(m_endDate);
+		m_activity.m_elapsed_time = difftime(time(0), m_activity.m_startTime);
+		getCurrentDateAsStr(m_activity.m_endDate);
 		insertActivityToDB();
 		insertActivityToTreeView();
 	}
@@ -124,20 +121,20 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 void CTestassignmentDlg::insertActivityToTreeView()
 {
 	HTREEITEM hItem, hCar;
-	hItem = FindItem(m_actMainCategory, NULL);
+	hItem = FindItem(m_activity.m_actMainCategory, NULL);
 	if (hItem == NULL)
 	{
-		hItem = m_activityTreeCtrl.InsertItem(m_actMainCategory, TVI_ROOT);
+		hItem = m_activityTreeCtrl.InsertItem(m_activity.m_actMainCategory, TVI_ROOT);
 	}
 	else
 	{
 		// update
 	}
 
-	hCar = FindItem(m_actSubCategory, hItem);
+	hCar = FindItem(m_activity.m_actSubCategory, hItem);
 	if (hCar == NULL)
 	{
-		hCar = m_activityTreeCtrl.InsertItem(m_actSubCategory, hItem);
+		hCar = m_activityTreeCtrl.InsertItem(m_activity.m_actSubCategory, hItem);
 	}
 	else
 	{
@@ -145,7 +142,7 @@ void CTestassignmentDlg::insertActivityToTreeView()
 		int seconds = getSumWorkingSeconds();
 	}
 
-	m_activityTreeCtrl.InsertItem(m_actComment + CString(" - elapsed time: ") + convertSecToStr(m_elapsed_time), hCar);
+	m_activityTreeCtrl.InsertItem(m_activity.m_actComment + CString(" - elapsed time: ") + convertSecToStr(m_activity.m_elapsed_time), hCar);
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 void CTestassignmentDlg::insertActivityToDB()
@@ -153,19 +150,21 @@ void CTestassignmentDlg::insertActivityToDB()
 	CString SqlString;
 	TRY
 	{
-		// Open the database
-		m_DB.Open(NULL, false, false, m_sDsn);
+		if (!m_DB.IsOpen())
+		{
+			m_DB.Open(NULL, false, false, m_sDsn);
+		}
 		CString elapsedSecs;
-		elapsedSecs.Format(L"%d", m_elapsed_time);
+		elapsedSecs.Format(L"%d", m_activity.m_elapsed_time);
 		// Create Query
 		SqlString =
 			CString("INSERT INTO Activities ( Category, Subcategory, Start_date, End_date, Comment, Elapsed_Time  )\
 					VALUES (")
-			+ CString("'") + m_actMainCategory + CString("',")
-			+ CString("'") + m_actSubCategory + CString("',")
-			+ CString("'") + m_startDate + CString("',")
-			+ CString("'") + m_endDate + CString("',")
-			+ CString("'") + m_actComment + CString("',")
+			+ CString("'") + m_activity.m_actMainCategory + CString("',")
+			+ CString("'") + m_activity.m_actSubCategory + CString("',")
+			+ CString("'") + m_activity.m_startDate + CString("',")
+			+ CString("'") + m_activity.m_endDate + CString("',")
+			+ CString("'") + m_activity.m_actComment + CString("',")
 			+ CString("'") + elapsedSecs + CString("')");
 			
 		// Execute query
@@ -179,6 +178,63 @@ void CTestassignmentDlg::insertActivityToDB()
 		AfxMessageBox(L"Database error: " + e->m_strError);
 	}
 	END_CATCH;
+}
+// ------------------------------------------------------------------------------------------------------------------------------------------------------
+void CTestassignmentDlg::loadActivities()
+{
+	CString SqlString;
+	TRY
+	{
+		// Open the database
+		if (!m_DB.IsOpen())
+		{
+			m_DB.Open(NULL, false, false, m_sDsn);
+		}
+
+		// Create Query
+		SqlString = "SELECT * FROM ACTIVITIES";
+		// Allocate the recordset
+		CRecordset recset(&m_DB);
+		// Execute query
+		recset.Open(CRecordset::forwardOnly, SqlString, CRecordset::readOnly);
+
+		std::vector<sActivity> loadedActivities;
+		loadedActivities.reserve(recset.GetODBCFieldCount());
+
+		sActivity tmp;
+		while (!recset.IsEOF())
+		{
+			CString elapsedTime;
+			recset.GetFieldValue(L"Category", tmp.m_actMainCategory);
+			recset.GetFieldValue(L"Subcategory", tmp.m_actSubCategory);
+			recset.GetFieldValue(L"Start_date", tmp.m_startDate);
+			recset.GetFieldValue(L"End_date", tmp.m_endDate);
+			recset.GetFieldValue(L"Comment", tmp.m_actComment);
+			recset.GetFieldValue(L"Elapsed_Time", elapsedTime);
+			tmp.m_elapsed_time = _ttoi(elapsedTime);
+			
+			loadedActivities.push_back(tmp);
+			// get next record
+			recset.MoveNext();
+		}
+
+		// Close the database
+		m_DB.Close();
+
+		for (const sActivity& a : loadedActivities)
+		{
+			m_activity = a;
+			insertActivityToTreeView();
+		}
+	
+	}
+	CATCH(CDBException, e)
+	{
+		// If a database exception occured, show error msg
+		AfxMessageBox(L"Database error: " + e->m_strError);
+	}
+	END_CATCH;
+
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 CString CTestassignmentDlg::convertSecToStr(int sec)
@@ -211,14 +267,17 @@ int CTestassignmentDlg::getSumWorkingSeconds()
 	CString SqlString;
 	TRY
 	{
-		// Open the database
-		m_DB.Open(NULL, false, false, m_sDsn);
+		if (!m_DB.IsOpen())
+		{
+			m_DB.Open(NULL, false, false, m_sDsn);
+		}
 		
 		// Create Query
 		SqlString = CString(
 					"SELECT SUM(Elapsed_Time) FROM ACTIVITIES \
 						WHERE\
-					Category='") + m_actMainCategory + CString("' AND Subcategory='") + m_actSubCategory + CString("';");
+					Category='") + m_activity.m_actMainCategory + CString("' AND Subcategory='") + m_activity.m_actSubCategory + CString("';");
+
 		// Allocate the recordset
 		CRecordset recset(&m_DB);
 		// Execute query
@@ -245,11 +304,11 @@ int CTestassignmentDlg::getSumWorkingSeconds()
 void CTestassignmentDlg::startNewActivity(CNewActivity& newActivityDialog)
 {
 	m_bIsRunning = true;
-	m_actMainCategory = newActivityDialog.m_actMainCategory;
-	m_actSubCategory = newActivityDialog.m_actSubCategory;
-	m_actComment = newActivityDialog.m_actComment;
-	m_startTime = time(0);
-	getCurrentDateAsStr(m_startDate);
+	m_activity.m_actMainCategory = newActivityDialog.m_actMainCategory;
+	m_activity.m_actSubCategory = newActivityDialog.m_actSubCategory;
+	m_activity.m_actComment = newActivityDialog.m_actComment;
+	m_activity.m_startTime = time(0);
+	getCurrentDateAsStr(m_activity.m_startDate);
 
 	GetDlgItem(IDC_BUTTON_START_STOP)->SetWindowText(L"Stop");
 	GetDlgItem(IDC_BUTTON_CANCEL)->ShowWindow(SW_SHOW);
@@ -280,11 +339,11 @@ void CTestassignmentDlg::getCurrentDateAsStr(CString& targetStr)
 void CTestassignmentDlg::OnBnClickedButtonCancel()
 {
 	endActivity();
-	m_actMainCategory.Delete(0, m_actMainCategory.GetLength());
-	m_actSubCategory.Delete(0, m_actSubCategory.GetLength());
-	m_actComment.Delete(0, m_actComment.GetLength());
-	m_startDate.Delete(0, m_startDate.GetLength());
-	m_startTime = 0;
+	m_activity.m_actMainCategory.Delete(0, m_activity.m_actMainCategory.GetLength());
+	m_activity.m_actSubCategory.Delete(0, m_activity.m_actSubCategory.GetLength());
+	m_activity.m_actComment.Delete(0, m_activity.m_actComment.GetLength());
+	m_activity.m_startDate.Delete(0, m_activity.m_startDate.GetLength());
+	m_activity.m_startTime = 0;
 }
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 HTREEITEM CTestassignmentDlg::FindItem(const CString & name, HTREEITEM hRoot)

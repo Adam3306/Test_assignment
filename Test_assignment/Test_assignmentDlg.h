@@ -9,6 +9,17 @@
 
 #include "CNewActivity.h"
 
+typedef struct
+{
+	CString m_actMainCategory;
+	CString m_actSubCategory;
+	CString m_actComment;
+	CString m_startDate;
+	CString m_endDate;
+	time_t	m_startTime;
+	int		m_elapsed_time;
+} sActivity;
+
 // CTestassignmentDlg dialog
 class CTestassignmentDlg : public CDialogEx
 {
@@ -34,23 +45,17 @@ protected:
 	void getCurrentDateAsStr(CString& targetStr);
 	void insertActivityToTreeView();
 	void insertActivityToDB();
+	void loadActivities();
 	CString convertSecToStr(int sec);
 	int getSumWorkingSeconds();
 
 	HTREEITEM FindItem(const CString& name, HTREEITEM hRoot);
-	// Values
-	CString m_actMainCategory;
-	CString m_actSubCategory;
-	CString m_actComment;
-	CString m_startDate;
-	CString m_endDate;
-	time_t	m_startTime;
-	int		m_elapsed_time;
 
 	bool m_bIsRunning;
 
 	CDatabase	m_DB;
 	CString		m_sDsn;
+	sActivity	m_activity;
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();

@@ -123,9 +123,28 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 void CTestassignmentDlg::insertActivityToTreeView()
 {
 	HTREEITEM hItem, hCar;
-	hItem = m_activityTreeCtrl.InsertItem(L"Car Listing", TVI_ROOT);
-	hCar = m_activityTreeCtrl.InsertItem(L"Economy", hItem);
-	m_activityTreeCtrl.InsertItem(L"BH-733", hCar);
+	hItem = FindItem(m_actMainCategory, NULL);
+	if (hItem == NULL)
+	{
+		hItem = m_activityTreeCtrl.InsertItem(m_actMainCategory, TVI_ROOT);
+	}
+	else
+	{
+		// update
+	}
+
+	hCar = FindItem(m_actSubCategory, hItem);
+	if (hCar == NULL)
+	{
+		hCar = m_activityTreeCtrl.InsertItem(m_actSubCategory, hItem);
+	}
+	else
+	{
+		// update
+	}
+
+	m_actComment += m_startDate + CString("") + m_endDate;
+	m_activityTreeCtrl.InsertItem(m_actComment, hCar);
 }
 
 HTREEITEM CTestassignmentDlg::FindItem(const CString & name, HTREEITEM hRoot)

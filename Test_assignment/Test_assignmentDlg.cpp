@@ -8,6 +8,8 @@
 #include "Test_assignmentDlg.h"
 #include "afxdialogex.h"
 
+#include "CNewActivity.h"
+
 #include <time.h>
 #include <stdlib.h>
 #include <ctime>
@@ -16,15 +18,18 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-/*
 
-"CREATE TABLE Activities (\
-			Category VARCHAR(50), Subcategory VARCHAR(50), Start_date DATETIME, End_date DATETIME, Comment VARCHAR(50), Elapsed_Time INTEGER )"
+/*
+	TODOS:
+		- show date
+		- refactor
+		- use real sql server instead of mdb file
+		- new menupoint to add past activities 
 */
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 // CTestassignmentDlg dialog
-CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent /*=nullptr*/)
+CTestassignmentDlg::CTestassignmentDlg(CWnd* pParent)
 	: CDialogEx(IDD_TEST_ASSIGNMENT_DIALOG, pParent)
 	, m_bIsRunning(false)
 	, m_sDsn(L"ODBC;DRIVER={MICROSOFT ACCESS DRIVER (*.mdb)};DSN='';DBQ=Database.mdb")
@@ -113,10 +118,6 @@ void CTestassignmentDlg::OnBnClickedButtonStartStop()
 		m_activity.m_elapsed_time = difftime(time(0), m_activity.m_startTime);
 		getCurrentDateAsStr(m_activity.m_endDate);
 		insertActivityToDB();
-
-		//m_activityTreeCtrl.DeleteAllItems();
-		//loadActivities();
-
 		insertActivityToTreeView();
 	}
 }

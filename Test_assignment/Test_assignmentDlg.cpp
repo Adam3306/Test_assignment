@@ -31,6 +31,7 @@ void CTestassignmentDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CTestassignmentDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_BUTTON_START_STOP, &CTestassignmentDlg::OnBnClickedButtonStartStop)
 END_MESSAGE_MAP()
 
 
@@ -86,3 +87,9 @@ HCURSOR CTestassignmentDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+
+void CTestassignmentDlg::OnBnClickedButtonStartStop()
+{
+	// TODO: Add your control notification handler code here
+}
